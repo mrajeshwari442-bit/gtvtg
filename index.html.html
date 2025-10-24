@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SIR ISSAC NEWTON COLLEGE OF ENGINEERING AND TECHNOLOGY - Seating</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+  body { background: linear-gradient(135deg,#ffecec,#fff8d9); font-family: "Times New Roman", Times, serif; padding:18px; }
+  .card { border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+  .btn-custom { background:#cc6161; color:#fff; }
+  .btn-custom:hover { background:#b34f4f; }
+  .table-seat td { min-width:82px; height:66px; text-align:center; vertical-align:middle; font-size:0.82rem; }
+  .summary { font-size:0.95rem; margin-top:8px; color:#333; }
+  .empty { color:#9e9e9e; }
+  .small-muted { font-size:0.72rem; color:#444; }
+  .top-title { font-weight:700; color:#7a0b0b; }
+  .controls { margin-bottom:12px; }
+  .note { font-size:0.85rem; color:#666; }
+  .logout-btn { position: absolute; right: 20px; top: 18px; }
+  .dept-CSE { background: #2ecc71; color: #072b14; }
+  .dept-MECH { background: #b08c8c; color: #072b14; }
+  .dept-ECE { background: #3498db; color: #03243b; }
+  .dept-AIDS { background: #f39c12; color: #3b2100; }
+  .dept-IT  { background: #9b59b6; color: #2a0b2b; }
+  .dept-AGRI{ background: #ad8c6d; color: #12110f; }
+  .seat-box { padding:6px; border-radius:6px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .unassigned-list { max-height: 200px; overflow:auto; font-size:0.9rem; background:#fffaf0; padding:8px; border-radius:6px; }
+  @media print {
+    table { page-break-inside: auto !important; }
+    tr    { page-break-inside: avoid !important; page-break-after: auto !important; }
+    td    { page-break-inside: avoid !important; }
+  }
+</style>
+</head>
+<body>
+<div class="container position-relative">
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="card p-4">
+    <h2 class="text-center top-title">SIR ISSAC NEWTON COLLEGE OF ENGINEERING AND TECHNOLOGY</h2>
+    <p class="text-center small-muted">Seating Management System</p>
+    <div class="d-grid gap-2 col-6 mx-auto mt-4">
+      <button class="btn btn-custom" onclick="showFacultyLogin()">Faculty Login</button>
+      <button class="btn btn-custom" onclick="showStudentLogin()">Student Login</button>
+    </div>
+  </div>
+
+  <!-- FACULTY LOGIN -->
+  <div id="facultyLogin" class="card p-4" style="display:none; margin-top:16px;">
+    <h4 class="mb-3">Faculty Login</h4>
+    <div class="mb-2">
+      <label>Username</label>
+      <input id="facultyUser" class="form-control" placeholder="username">
+    </div>
+    <div class="mb-2">
+      <label>Password</label>
+      <input id="facultyPass" type="password" class="form-control" placeholder="password">
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-custom" onclick="facultyAuthenticate()">Login</button>
+      <button class="btn btn-secondary" onclick="backToChoice()">Back</button>
+    </div>
+    <div id="facultyMsg" class="mt-2 text-danger"></div>
+  </div>
+
+  <!-- STUDENT LOGIN -->
+  <div id="studentLogin" class="card p-4" style="display:none; margin-top:16px;">
+    <h4 class="mb-3">Student Login</h4>
+    <div class="mb-2">
+      <label>Register Number</label>
+      <input id="studentRegNo" class="form-control" placeholder="Enter your register number">
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-custom" onclick="studentSearch()">Find Seat</button>
+      <button class="btn btn-secondary" onclick="backToChoice()">Back</button>
+    </div>
+    <div id="studentResult" class="mt-3"></div>
+  </div>
+
+  <!-- FACULTY TOOL -->
+  <div id="facultyTool" class="card p-4" style="display:none; margin-top:16px;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="text-center top-title">SIR ISSAC NEWTON COLLEGE OF ENGINEERING AND TECHNOLOGY</h2>
+        <p class="text-center small-muted">Seating Management</p>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="controls">
+      <div class="mb-2"><strong>Departments :</strong></div>
+      <div class="mb-2" id="deptColumnsChoice">
+        <label class="me-2"><input type="checkbox" class="deptChk" value="IT"> IT</label>
+        <select id="ITCols" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="1,4,7">Columns [1,4,7]</option>
+          <option value="2,5,8">Columns [2,5,8]</option>
+          <option value="3,6,9">Columns [3,6,9]</option>
+        </select><br>
+        <label class="me-2"><input type="checkbox" class="deptChk" value="AIDS"> AIDS</label>
+        <select id="AIDSCols" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="1,4,7">Columns [1,4,7]</option>
+          <option value="2,5,8">Columns [2,5,8]</option>
+          <option value="3,6,9">Columns [3,6,9]</option>
+        </select><br>
+        <label class="me-2"><input type="checkbox" class="deptChk" value="ECE"> ECE</label>
+        <select id="ECECols" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="2,5,8">Columns [2,5,8]</option>
+          <option value="3,6,9">Columns [3,6,9]</option>
+          <option value="1,4,7">Columns [1,4,7]</option>
+        </select><br>
+        <label class="me-2"><input type="checkbox" class="deptChk" value="CSE"> CSE</label>
+        <select id="CSECols" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="3,6,9">Columns [3,6,9]</option>
+          <option value="1,4,7">Columns [1,4,7]</option>
+          <option value="2,5,8">Columns [2,5,8]</option>
+        </select><br>
+        <label class="me-2"><input type="checkbox" class="deptChk" value="AGRI"> AGRI</label>
+        <select id="AGRICols" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="3,6,9">Columns [3,6,9]</option>
+          <option value="1,4,7">Columns [1,4,7]</option>
+          <option value="2,5,8">Columns [2,5,8]</option>
+        </select><br>
+        <label class="me-2"><input type="checkbox" class="deptChk" value="MECH"> MECH</label>
+        <select id="MECHCols" class="form-select form-select-sm d-inline-block w-auto">
+          <option value="2,5,8">Columns [2,5,8]</option>
+          <option value="3,6,9">Columns [3,6,9]</option>
+          <option value="1,4,7">Columns [1,4,7]</option>
+        </select>
+      </div>
+
+      <div class="mb-2"><strong>Years :</strong></div>
+      <div class="mb-2">
+        <label class="me-2"><input type="checkbox" class="yearChk" value="I Year"> I Year</label>
+        <label class="me-2"><input type="checkbox" class="yearChk" value="II Year"> II Year</label>
+        <label class="me-2"><input type="checkbox" class="yearChk" value="III Year"> III Year</label>
+        <label class="me-2"><input type="checkbox" class="yearChk" value="IV Year"> IV Year</label>
+      </div>
+
+      <div class="mb-2"><strong>Semesters :</strong></div>
+      <div class="mb-2">
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 1"> Sem 1</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 2"> Sem 2</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 3"> Sem 3</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 4"> Sem 4</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 5"> Sem 5</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 6"> Sem 6</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 7"> Sem 7</label>
+        <label class="me-2"><input type="checkbox" class="semChk" value="Sem 8"> Sem 8</label>
+      </div>
+
+      <div class="row g-2">
+        <div class="mb-2">
+          <label class="form-label">Halls (comma separated) :</label>
+          <input id="hallsInput" class="form-control" placeholder="Hall 1, Hall 2" value="Hall 1, Hall 2, Hall 3">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Seats per Row :</label>
+          <input id="benchSizeInput" type="number" class="form-control" value="9" min="1" max="10">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Rows per Hall :</label>
+          <input id="benchesPerHallInput" type="number" class="form-control" value="5" min="1" max="200">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-custom w-100" id="generateBtn">Generate Seating</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+      <button class="btn btn-outline-secondary" id="downloadPdfBtn">Download PDF (Landscape)</button>
+      <button class="btn btn-outline-secondary" id="exportCsvBtn">Export CSV</button>
+      <button class="btn btn-outline-secondary" id="uploadBtn">Upload Seating</button>
+    </div>
+    <div class="text-center mt-4">
+      <button class="btn btn-danger" onclick="logout()">Logout</button>
+    </div>
+
+    <div id="seatingOutput" class="mt-3"></div>
+    <div id="unassignedBox" class="mt-3"></div>
+</div>
+
+<script>
+// ---------------- SUBJECT MAP ----------------
+const subjectMap = {
+  "IT": {"Sem 1":"Math I","Sem 2":"Physics I","Sem 3":"Data Structures","Sem 4":"DBMS"},
+  "CSE": {"Sem 3":"Algorithms","Sem 4":"Operating Systems"},
+  "ECE": {"Sem 3":"Digital Electronics","Sem 4":"Signals & Systems"},
+  "AIDS":{"Sem 3":"Networking Basics"},
+  "AGRI":{"Sem 3":"Crop Science"},
+  "MECH":{"Sem 3":"Thermodynamics"}
+};
+
+// ---------------- STUDENT GENERATOR ----------------
+function buildStudentsForDept(dept, selectedYears, selectedSems){
+  const list=[];
+  if(dept==="IT"){ for(let i=1;i<=60;i++) list.push({reg:"821724205"+String(i).padStart(3,'0'),dept:"IT",year:"II Year",sem:"Sem 3",subject:subjectMap["IT"]["Sem 3"]}); }
+  if(dept==="ECE"){ for(let i=1;i<=58;i++) list.push({reg:"821724106"+String(i).padStart(3,'0'),dept:"ECE",year:"II Year",sem:"Sem 3",subject:subjectMap["ECE"]["Sem 3"]}); }
+  if(dept==="CSE"){ for(let i=1;i<=55;i++) list.push({reg:"821724101"+String(i).padStart(3,'0'),dept:"CSE",year:"II Year",sem:"Sem 3",subject:subjectMap["CSE"]["Sem 3"]}); }
+  if(dept==="AGRI"){ for(let i=1;i<=43;i++) list.push({reg:"821724225"+String(i).padStart(3,'0'),dept:"AGRI",year:"II Year",sem:"Sem 3",subject:subjectMap["AGRI"]["Sem 3"]}); }
+  if(dept==="AIDS"){ for(let i=1;i<=50;i++) list.push({reg:"8217243"+String(i).padStart(3,'0'),dept:"AIDS",year:"II Year",sem:"Sem 3",subject:subjectMap["AIDS"]["Sem 3"]}); }
+  if(dept==="MECH"){ for(let i=1;i<=48;i++) list.push({reg:"821724300"+String(i).padStart(3,'0'),dept:"MECH",year:"II Year",sem:"Sem 3",subject:subjectMap["MECH"]["Sem 3"]}); }
+  return list;
+}
+
+// ---------------- YEAR → SEM AUTOSELECT ----------------
+const yearToSems = {"I Year":["Sem 1","Sem 2"],"II Year":["Sem 3","Sem 4"],"III Year":["Sem 5","Sem 6"],"IV Year":["Sem 7","Sem 8"]};
+function syncSemsFromYears(){ const years=Array.from(document.querySelectorAll('.yearChk:checked')).map(x=>x.value); document.querySelectorAll('.semChk').forEach(cb=>cb.checked=false); years.forEach(y=>{(yearToSems[y]||[]).forEach(s=>{const el=Array.from(document.querySelectorAll('.semChk')).find(x=>x.value===s); if(el) el.checked=true;});}); }
+document.querySelectorAll('.yearChk').forEach(cb=>cb.addEventListener('change',syncSemsFromYears));
+
+// ---------------- NAVIGATION ----------------
+function showFacultyLogin(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('facultyLogin').style.display='block'; }
+function showStudentLogin(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('studentLogin').style.display='block'; }
+function backToChoice(){ document.getElementById('facultyLogin').style.display='none'; document.getElementById('studentLogin').style.display='none'; document.getElementById('facultyTool').style.display='none'; document.getElementById('loginScreen').style.display='block'; seatingIndexGlobal={}; document.getElementById('facultyMsg').innerText=''; document.getElementById('studentResult').innerHTML=''; }
+function logout(){ location.reload(); }
+
+// ---------------- FACULTY AUTH ----------------
+const FAC_USER="SINCET", FAC_PASS="sincet123";
+function facultyAuthenticate(){ const u=document.getElementById('facultyUser').value.trim(); const p=document.getElementById('facultyPass').value; const msg=document.getElementById('facultyMsg'); if(u===FAC_USER && p===FAC_PASS){ document.getElementById('facultyLogin').style.display='none'; document.getElementById('facultyTool').style.display='block'; msg.innerText=''; } else { msg.innerText='Invalid credentials.'; } }
+
+// ---------------- GLOBAL INDEX ----------------
+let seatingIndexGlobal = {};
+
+// ---------------- PLACE STUDENTS ----------------
+function placeStudentsByDeptColumns(students,hallsOutput,seatsPerRow,rowsPerHall){
+  const deptColumns={};
+  document.querySelectorAll('.deptChk:checked').forEach(cb=>{const dept=cb.value; const colSelect=document.getElementById(dept+'Cols'); if(colSelect){ deptColumns[dept] = colSelect.value.split(',').map(n=>parseInt(n)); }
+  });
+
+  const deptGroups = {};
+  students.forEach(s=>{ if(!deptGroups[s.dept]) deptGroups[s.dept]=[]; deptGroups[s.dept].push(s); });
+  Object.keys(deptGroups).forEach(d=>deptGroups[d].sort((a,b)=>a.reg.localeCompare(b.reg, undefined, {numeric:true})));
+
+  const unassigned=[];
+  Object.keys(deptGroups).forEach(dept=>{
+    const list=deptGroups[dept];
+    const cols=(deptColumns[dept] && deptColumns[dept].length)?deptColumns[dept]:[1];
+    let hallIdx=0, colIdx=0, rowPtr=0;
+    list.forEach(student=>{
+      let placed=false, loopSafety=0;
+      while(!placed && loopSafety<10000){
+        loopSafety++;
+        if(hallIdx>=hallsOutput.length){
+          hallsOutput.push({ hallName:"Hall "+(hallsOutput.length+1), rows:Array.from({length:rowsPerHall},()=>Array(seatsPerRow).fill(null)) });
+        }
+        const hall=hallsOutput[hallIdx];
+        const col=(cols[colIdx%cols.length])-1;
+        let r=rowPtr;
+        while(r<hall.rows.length && hall.rows[r][col]!==null) r++;
+        if(r<hall.rows.length){
+          hall.rows[r][col]=student;
+          placed=true;
+          rowPtr=r+1;
+        } else {
+          colIdx++;
+          if((colIdx%cols.length)===0) hallIdx++;
+          rowPtr=0;
+        }
+      }
+      if(!placed) unassigned.push(student);
+    });
+  });
+  return unassigned;
+}
+
+// ---------------- GENERATE BUTTON ----------------
+document.getElementById('generateBtn').addEventListener('click',()=>{
+  const selectedDepts=Array.from(document.querySelectorAll('.deptChk:checked')).map(x=>x.value);
+  const selectedYears=Array.from(document.querySelectorAll('.yearChk:checked')).map(x=>x.value);
+  const selectedSems=Array.from(document.querySelectorAll('.semChk:checked')).map(x=>x.value);
+  const halls=document.getElementById('hallsInput').value.split(',').map(s=>s.trim()).filter(s=>s);
+  const seatsPerRow=parseInt(document.getElementById('benchSizeInput').value)||5;
+  const rowsPerHall=parseInt(document.getElementById('benchesPerHallInput').value)||10;
+
+  if(selectedDepts.length===0){ alert('Select at least one department.'); return; }
+  if(selectedYears.length===0){ alert('Select at least one year.'); return; }
+  if(halls.length===0){ alert('Enter at least one hall name.'); return; }
+
+  let students=[];
+  selectedDepts.forEach(d=>{
+    students=students.concat(buildStudentsForDept(d,selectedYears,selectedSems));
+  });
+
+  if(students.length===0){ alert('No student records available for selected filters.'); return; }
+
+  students.sort((a,b)=>a.reg.localeCompare(b.reg, undefined, {numeric:true}));
+
+  const hallsOutput=halls.map(hn=>({ hallName: hn, rows:Array.from({length: rowsPerHall}, ()=>Array(seatsPerRow).fill(null)) }));
+  const unassigned=placeStudentsByDeptColumns(students,hallsOutput,seatsPerRow,rowsPerHall);
+
+  // ---------------- RENDER ----------------
+  seatingIndexGlobal={};
+  const out=document.getElementById('seatingOutput'); out.innerHTML='';
+
+  hallsOutput.forEach(h=>{
+    const hallDiv=document.createElement('div'); hallDiv.className='mb-4';
+    const totalInHall=h.rows.reduce((acc,row)=>acc+row.filter(x=>x).length,0);
+    const seatsPerHall=rowsPerHall*seatsPerRow;
+
+    const summary=document.createElement('div'); summary.className='summary';
+    summary.innerHTML=`<strong>${h.hallName}</strong> — Students seated: ${totalInHall} &nbsp;|&nbsp; Rows: ${rowsPerHall} &nbsp;|&nbsp; Seats/Row: ${seatsPerRow} &nbsp;|&nbsp; Seats per hall: ${seatsPerHall}`;
+    hallDiv.appendChild(summary);
+
+    const table=document.createElement('table'); table.className='table table-bordered table-seat mt-2';
+    const thead=document.createElement('thead');
+    const headRow=document.createElement('tr');
+    const thCorner=document.createElement('th'); thCorner.textContent=''; headRow.appendChild(thCorner);
+    for(let c=1;c<=seatsPerRow;c++){ const th=document.createElement('th'); th.textContent='Col '+c; headRow.appendChild(th); }
+    thead.appendChild(headRow); table.appendChild(thead);
+
+    const tbody=document.createElement('tbody');
+    for(let r=0;r<h.rows.length;r++){
+      const tr=document.createElement('tr');
+      const rowHeader=document.createElement('th'); rowHeader.textContent='Row '+(r+1); tr.appendChild(rowHeader);
+      for(let s=0;s<seatsPerRow;s++){
+        const td=document.createElement('td');
+        const stud=h.rows[r][s];
+        if(stud){
+          const seatNo=r*seatsPerRow+s+1;
+          const div=document.createElement('div');
+          const deptClass='dept-'+(stud.dept||'').replace(/\s+/g,'');
+          div.className=`seat-box ${deptClass}`;
+          div.innerHTML=`<div style="font-weight:700">${stud.reg}</div><div class="small-muted">${stud.dept} · ${stud.year} · ${stud.sem}</div><div style="font-size:0.75rem">${stud.subject}</div><div style="font-size:0.75rem">Seat ${seatNo}</div>`;
+          td.appendChild(div);
+          seatingIndexGlobal[stud.reg]={ hall: h.hallName, seatNo: seatNo, dept: stud.dept, year: stud.year, sem: stud.sem, subject: stud.subject };
+        } else { td.innerHTML='<span class="empty">-</span>'; }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody); hallDiv.appendChild(table); out.appendChild(hallDiv);
+  });
+
+  const unBox=document.getElementById('unassignedBox'); unBox.innerHTML='';
+  if(unassigned.length>0){
+    const div=document.createElement('div'); div.className='alert alert-warning';
+    div.innerHTML=`<strong>${unassigned.length}</strong> students unassigned.`;
+    const list=document.createElement('div'); list.className='unassigned-list';
+    list.innerHTML=unassigned.map(s=>`${s.reg} · ${s.dept} · ${s.year} · ${s.sem} · ${s.subject}`).join('<br>');
+    div.appendChild(list); unBox.appendChild(div);
+  } else {
+    unBox.innerHTML=`<div class="note">All students allocated (column-wise seating with subjects).</div>`;
+  }
+});
+
+// ---------------- STUDENT SEARCH ----------------
+function studentSearch(){
+  const regNo=document.getElementById('studentRegNo').value.trim();
+  if(!regNo){ alert('Enter your Register Number.'); return; }
+  const seatingData=JSON.parse(localStorage.getItem("seatingData")||"{}");
+  const out=document.getElementById('studentResult');
+  if(!Object.keys(seatingData).length){ alert("⚠️ Faculty hasn't uploaded seating yet."); return; }
+  const info=seatingData[regNo];
+  if(info){
+    out.innerHTML=`<b>Register No:</b> ${regNo}<br><b>Dept:</b> ${info.dept}<br><b>Year:</b> ${info.year}<br><b>Hall:</b> ${info.hall}<br><b>Seat:</b> ${info.seatNo}<br><b>Subject:</b> ${info.subject}`;
+  } else { out.innerHTML=`<span style="color:red;">❌ No seating found for ${regNo}</span>`; }
+}
+
+// ---------------- PDF / CSV / UPLOAD BUTTONS ----------------
+document.getElementById('downloadPdfBtn').addEventListener('click',()=>{
+  const { jsPDF }=window.jspdf;
+  if(!seatingIndexGlobal||!Object.keys(seatingIndexGlobal).length){ alert('Generate seating first.'); return; }
+  const doc=new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  let firstPage=true;
+  Array.from(document.querySelectorAll('#seatingOutput > div')).forEach(hallDiv=>{
+    if(!firstPage) doc.addPage();
+    firstPage=false;
+    const hallName=hallDiv.querySelector('.summary').innerText.split('—')[0].trim();
+    doc.setFontSize(14); doc.text(hallName,10,10);
+    const table=hallDiv.querySelector('table');
+    const head=Array.from(table.querySelectorAll('thead tr th')).map(th=>th.textContent);
+    const body=Array.from(table.querySelectorAll('tbody tr')).map(tr=>Array.from(tr.querySelectorAll('th, td')).map(td=>td.innerText.replace(/\n/g,' ')));
+    doc.autoTable({ startY:15, head:[head], body:body, theme:'grid', headStyles:{fillColor:[200,200,200]}, styles:{fontSize:8,cellPadding:2} });
+  });
+  doc.save('seating_arrangement.pdf');
+});
+
+document.getElementById('exportCsvBtn').addEventListener('click',()=>{
+  if(!seatingIndexGlobal||!Object.keys(seatingIndexGlobal).length){ alert('Generate seating first.'); return; }
+  const rows=[["RegisterNo","Dept","Year","Hall","SeatNo","Subject"]];
+  Object.keys(seatingIndexGlobal).forEach(reg=>{
+    const v=seatingIndexGlobal[reg];
+    rows.push([reg,v.dept,v.year,v.hall,v.seatNo,v.subject]);
+  });
+  const csv=rows.map(r=>r.map(cell=>`"${String(cell).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob=new Blob([csv],{ type : 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'seating_arrangement.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ---------------- UPLOAD SEATING ----------------
+document.getElementById('uploadBtn').addEventListener('click',()=>{
+  if(!seatingIndexGlobal||!Object.keys(seatingIndexGlobal).length){ alert('Generate seating first.'); return; }
+  localStorage.setItem("seatingData", JSON.stringify(seatingIndexGlobal));
+  alert('✅ Seating uploaded! Students can now search their seat.');
+});
+</script>
+</body>
+</html>
